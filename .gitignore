@@ -1,0 +1,5 @@
+# Firebase Configuration
+firebaseConfig.json
+
+# Dependencies
+/node_modules/
