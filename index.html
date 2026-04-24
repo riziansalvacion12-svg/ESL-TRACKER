@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESL Tracker</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        input, button { margin: 10px 0; padding: 10px; width: 100%; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ESL Tracker</h1>
+        <div id="user-signed-out" class="hidden">
+            <h2>Please Sign In</h2>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button id="sign-in">Sign In</button>
+            <button id="sign-up">Sign Up</button>
+        </div>
+        <div id="user-signed-in" class="hidden">
+            <h2>Welcome</h2>
+            <p id="user-email"></p>
+            <button id="sign-out">Sign Out</button>
+            <h3>Your Sessions</h3>
+            <ul id="sessions-list"></ul>
+            <input type="text" id="session-name" placeholder="Session Name">
+            <button id="add-session">Add Session</button>
+        </div>
+    </div>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const userSignedOut = document.getElementById('user-signed-out');
+        const userSignedIn = document.getElementById('user-signed-in');
+        const userEmail = document.getElementById('user-email');
+        const sessionsList = document.getElementById('sessions-list');
+        const sessionNameInput = document.getElementById('session-name');
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                userSignedOut.classList.add('hidden');
+                userSignedIn.classList.remove('hidden');
+                userEmail.textContent = user.email;
+                loadSessions(user.uid);
+            } else {
+                userSignedOut.classList.remove('hidden');
+                userSignedIn.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('sign-in').onclick = () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, password);
+        };
+
+        document.getElementById('sign-up').onclick = () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.createUserWithEmailAndPassword(email, password);
+        };
+
+        document.getElementById('sign-out').onclick = () => {
+            auth.signOut();
+        };
+
+        document.getElementById('add-session').onclick = () => {
+            const sessionName = sessionNameInput.value;
+            addSession(sessionName);
+            sessionNameInput.value = '';
+        };
+
+        function loadSessions(userId) {
+            db.collection('sessions').where('userId', '==', userId)
+            .get().then(snapshot => {
+                snapshot.forEach(doc => {
+                    const li = document.createElement('li');
+                    li.textContent = doc.data().name;
+                    sessionsList.appendChild(li);
+                });
+            });
+        }
+
+        function addSession(name) {
+            const userId = auth.currentUser.uid;
+            db.collection('sessions').add({
+                name: name,
+                userId: userId
+            });
+        }
+    </script>
+</body>
+</html>
