@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow access only to authenticated users
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Match users' sessions collection
+    // Users can only read/write their own sessions
+    match /users/{userId}/sessions/{sessionId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
